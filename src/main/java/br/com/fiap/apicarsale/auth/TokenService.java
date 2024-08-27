@@ -1,16 +1,17 @@
 package br.com.fiap.apicarsale.auth;
 
-import br.com.fiap.apicarsale.domain.user.User;
-import br.com.fiap.apicarsale.domain.user.UserRepository;
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import jakarta.validation.Valid;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+
+import br.com.fiap.apicarsale.domain.user.User;
+import br.com.fiap.apicarsale.domain.user.UserRepository;
 
 @Service
 public class TokenService {
@@ -23,7 +24,7 @@ public class TokenService {
         ALGORITHM = Algorithm.HMAC256(secret);
     }
 
-    public Token create(User user){
+    public Token create(User user) {
         var expires = LocalDateTime.now().plusMinutes(10).toInstant(ZoneOffset.ofHours(-3));
 
         var token = JWT.create()
@@ -36,4 +37,13 @@ public class TokenService {
         return new Token(token, user.getName(), user.getId().toString(), user.getRole());
     }
 
+    public User getUserfromToken(String token) {
+        var id = JWT.require(ALGORITHM)
+                .build()
+                .verify(token)
+                .getSubject();
+
+        return userRepository.findById(Long.parseLong(id))
+                .orElseThrow(() -> new UsernameNotFoundException("User not Found"));
+    }
 }

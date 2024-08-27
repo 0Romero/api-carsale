@@ -13,20 +13,21 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain config(HttpSecurity http) throws Exception{
-        http
-            .authorizeHttpRequests(auth -> auth
-                    .anyRequest().permitAll()
-            )
-            .csrf(csrf -> csrf.disable()
-        );
-
+    public SecurityFilterChain config(HttpSecurity http, AuthFilter authFilter) throws Exception {
+        http.csrf(csrf -> csrf.disable());
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.POST, "/login").permitAll()
+                .requestMatchers(HttpMethod.GET, "/cars/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/comments/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/comments").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/comments/**").hasRole("ADMIN")
+                .anyRequest().permitAll());
+        http.addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
-
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder(){
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
